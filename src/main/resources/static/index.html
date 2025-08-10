@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare App - Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #5a6fd8;
+        }
+        .register-btn {
+            background: #764ba2;
+        }
+        .register-btn:hover {
+            background: #6a4190;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .health-section {
+            display: none;
+            margin-top: 20px;
+        }
+        .health-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .health-records {
+            margin-top: 20px;
+        }
+        .record-item {
+            background: #e9ecef;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .logout-btn {
+            background: #dc3545;
+            margin-top: 20px;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 style="text-align: center; color: #333; margin-bottom: 30px;">🏥 Healthcare App</h2>
+        
+        <!-- Login/Register Form -->
+        <div id="auth-section">
+            <div id="message" class="message"></div>
+            
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" placeholder="Enter username">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter password">
+            </div>
+            
+            <button onclick="login()">Login</button>
+            <button class="register-btn" onclick="register()">Register</button>
+        </div>
+
+        <!-- Health Records Section -->
+        <div id="health-section" class="health-section">
+            <h3>Welcome, <span id="user-display"></span>!</h3>
+            
+            <!-- Add Health Record Form -->
+            <div class="health-form">
+                <h4>Add Health Record</h4>
+                <div class="form-group">
+                    <label for="date">Date:</label>
+                    <input type="date" id="date">
+                </div>
+                <div class="form-group">
+                    <label for="weight">Weight (kg):</label>
+                    <input type="number" id="weight" step="0.1" placeholder="70.5">
+                </div>
+                <div class="form-group">
+                    <label for="bloodPressure">Blood Pressure:</label>
+                    <input type="text" id="bloodPressure" placeholder="120/80">
+                </div>
+                <div class="form-group">
+                    <label for="exerciseMinutes">Exercise Minutes:</label>
+                    <input type="number" id="exerciseMinutes" placeholder="30">
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes (comma separated):</label>
+                    <input type="text" id="notes" placeholder="feeling good, good sleep">
+                </div>
+                <button onclick="addHealthRecord()">Add Record</button>
+            </div>
+
+            <!-- Health Records List -->
+            <div class="health-records">
+                <h4>Your Health Records</h4>
+                <button onclick="loadHealthRecords()">Refresh Records</button>
+                <div id="records-list"></div>
+            </div>
+
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = localStorage.getItem('currentUser');
+
+        // Check if user is already logged in
+        if (authToken && currentUser) {
+            showHealthSection();
+        }
+
+        function showMessage(message, isError = false) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${isError ? 'error' : 'success'}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showMessage('Please enter both username and password', true);
+                return;
+            }
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    authToken = data.token;
+                    currentUser = username;
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', currentUser);
+                    showHealthSection();
+                    showMessage('Login successful!');
+                    loadHealthRecords();
+                } else {
+                    showMessage('Login failed. Please check your credentials.', true);
+                }
+            })
+            .catch(error => {
+                showMessage('Login failed: ' + error.message, true);
+            });
+        }
+
+        function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showMessage('Please enter both username and password', true);
+                return;
+            }
+
+            fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    showMessage('Registration successful! You can now login.');
+                    document.getElementById('username').value = '';
+                    document.getElementById('password').value = '';
+                } else {
+                    showMessage('Registration failed.', true);
+                }
+            })
+            .catch(error => {
+                showMessage('Registration failed: ' + error.message, true);
+            });
+        }
+
+        function showHealthSection() {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('health-section').style.display = 'block';
+            document.getElementById('user-display').textContent = currentUser;
+        }
+
+        function addHealthRecord() {
+            const record = {
+                date: document.getElementById('date').value,
+                weight: parseFloat(document.getElementById('weight').value),
+                bloodPressure: document.getElementById('bloodPressure').value,
+                exerciseMinutes: parseInt(document.getElementById('exerciseMinutes').value),
+                notes: document.getElementById('notes').value.split(',').map(note => note.trim()).filter(note => note)
+            };
+
+            fetch('/api/health', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + authToken
+                },
+                body: JSON.stringify(record)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showMessage('Health record added successfully!');
+                loadHealthRecords();
+                // Clear form
+                document.getElementById('date').value = '';
+                document.getElementById('weight').value = '';
+                document.getElementById('bloodPressure').value = '';
+                document.getElementById('exerciseMinutes').value = '';
+                document.getElementById('notes').value = '';
+            })
+            .catch(error => {
+                showMessage('Failed to add record: ' + error.message, true);
+            });
+        }
+
+        function loadHealthRecords() {
+            fetch('/api/health', {
+                headers: {
+                    'Authorization': 'Bearer ' + authToken
+                }
+            })
+            .then(response => response.json())
+            .then(records => {
+                const recordsList = document.getElementById('records-list');
+                if (records.length === 0) {
+                    recordsList.innerHTML = '<p>No health records found.</p>';
+                    return;
+                }
+
+                recordsList.innerHTML = records.map(record => `
+                    <div class="record-item">
+                        <strong>ID:</strong> ${record.id}<br>
+                        <strong>Diagnosis:</strong> ${record.diagnosis}<br>
+                        <strong>Notes:</strong> ${record.notes}<br>
+                        <strong>User:</strong> ${record.userName}<br>
+                        <button onclick="deleteRecord(${record.id})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 10px;">Delete</button>
+                    </div>
+                `).join('');
+            })
+            .catch(error => {
+                showMessage('Failed to load records: ' + error.message, true);
+            });
+        }
+
+        function deleteRecord(id) {
+            if (confirm('Are you sure you want to delete this record?')) {
+                fetch(`/api/health/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        showMessage('Record deleted successfully!');
+                        loadHealthRecords();
+                    } else {
+                        showMessage('Failed to delete record.', true);
+                    }
+                })
+                .catch(error => {
+                    showMessage('Failed to delete record: ' + error.message, true);
+                });
+            }
+        }
+
+        function logout() {
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('health-section').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            showMessage('Logged out successfully!');
+        }
+    </script>
+</body>
+</html> 
