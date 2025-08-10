@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginx-service
+  name: java-application-service
 spec:
   selector:
-    app: nginx
-  type: LoadBalancer # Can also be NodePort or LoadBalancer
+    app: webapp
+  type: LoadBalancer
   ports:
     - protocol: TCP
-      port: 80        # Port exposed by the service
-      targetPort: 8080 # Port on the container
+      port: 80        
+      targetPort: 8080
 
