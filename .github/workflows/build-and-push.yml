@@ -48,6 +48,11 @@ jobs:
             --zone ${{ secrets.GKE_CLUSTER_ZONE }} \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          sudo apt-get update
+          sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin -y
+
       - name: Deploy the Application to GKE
         run: |
           kubectl apply -f deployment-config/deployment.yaml
