@@ -50,5 +50,5 @@ jobs:
 
       - name: Deploy the Application to GKE
         run: |
-          kubectl apply -f deployment-configs/deployment.yaml
-          kubectl apply -f deployment-configs/service.yaml
+          kubectl apply -f deployment-config/deployment.yaml
+          kubectl apply -f deployment-config/service.yaml
