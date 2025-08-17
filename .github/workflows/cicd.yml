@@ -72,6 +72,7 @@ jobs:
        run: |
           kubectl apply -f deployment-config/deployment.yaml
           kubectl apply -f deployment-config/service.yaml
+          kubectl rollout restart deployment/java-application-deployment
 
      
 
