@@ -1,77 +1,39 @@
-name: Build Push and Deploy Java App to Artifact Registry
+name: Build & Deploy Application
 
 on:
-  push:
+  push: 
     branches:
-      - main
+     - main
 
 jobs:
   Build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+     - name: Checkout repository
+       uses: actions/checkout@v4
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
+     - name: Set up JDK
+       uses: actions/setup-java@v4
+       with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build jar with Maven
-        run: mvn clean package -DskipTests
+     - name: Build jar with Maven
+       run: mvn clean package -DskipTests
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
+     - name: Set up Docker
+       uses: docker/setup-buildx-action@v3
 
-      - name: Configure Google Cloud credentials
-        run: |
-          echo '${{ secrets.GCP_SA_KEY }}' > $HOME/gcloud.json
-          cat $HOME/gcloud.json
-          gcloud auth activate-service-account --key-file=$HOME/gcloud.json
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-          gcloud auth configure-docker ${{ secrets.GCP_ARTIFACT_REGISTRY_REGION }}-docker.pkg.dev
+     - name: Configure Google Cloud credentials
+       run: |
+        echo '${{ secrets.GCP_SA_KEY }}' > $HOME/gcloud.json
+        gcloud auth activate-service-account --key-file=$HOME/gcloud.json
+        gcloud config set project abiding-honor-383407
+        gcloud auth configure-docker us-central1-docker.pkg.dev
 
-      - name: Build Docker image
-        run: |
-          IMAGE="${{ secrets.GCP_ARTIFACT_REGISTRY_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REPO_NAME }}/java-app:latest"
+     - name: Build Docker image
+       run: |
+          IMAGE=us-central1-docker.pkg.dev/abiding-honor-383407/project-repo/java-app:latest
           docker build -t $IMAGE .
-          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-
-      - name: Push Docker image to Artifact Registry
-        run: docker push $IMAGE
-
-  Deploy:
-    needs: Build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Configure Google Cloud credentials
-        run: |
-          echo '${{ secrets.GCP_SA_KEY }}' > $HOME/gcloud.json
-          cat $HOME/gcloud.json
-          gcloud auth activate-service-account --key-file=$HOME/gcloud.json
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-      - name: Get GKE credentials
-        run: |
-          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
-            --zone ${{ secrets.GKE_CLUSTER_ZONE }} \
-            --project ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Install gcloud with GKE auth plugin
-        run: |
-          echo "Installing Google Cloud SDK with GKE auth plugin..."
-          sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates gnupg curl
-          echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | 
-            sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | 
-            sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
-          sudo apt-get update && sudo apt-get install -y google-cloud-sdk google-cloud-sdk-gke-gcloud-auth-plugin
-
-      - name: Deploy the Application to GKE
-        run: |
-          kubectl apply -f deployment-config/deployment.yaml
-          kubectl apply -f deployment-config/service.yaml
+          docker push $IMAGE
