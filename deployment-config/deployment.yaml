@@ -17,6 +17,7 @@ spec:
       containers:
         - name: java-app
           image: us-central1-docker.pkg.dev/abiding-honor-383407/project-repo/java-app:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
 
